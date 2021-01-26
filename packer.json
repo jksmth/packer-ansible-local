@@ -1,0 +1,44 @@
+{
+    "variables": {
+        "security_group": "{{env `SECURITY_GROUP`}}",
+        "branch": "{{env `GIT_BRANCH`}}",
+        "aws_access_key": "{{ env `AWS_ACCESS_KEY_ID` }}",
+        "aws_secret_key": "{{ env `AWS_SECRET_ACCESS_KEY` }}",
+        "name": "{{ env `APP_NAME` }}"
+    },
+    "builders": [
+        {
+            "type": "openstack",
+            "security_groups": ["{{user `security_group`}}"],
+            "flavor": "m2.small",
+            "source_image_filter": {
+                "filters": {
+                    "name": "ubuntu-18.04"
+                },
+                "most_recent": true
+            },
+            "ssh_username": "ubuntu",
+            "image_name": "{{user `branch`}}"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "scripts": [
+                "./scripts/ansible.sh"
+            ]
+        },
+        {
+            "type": "ansible-local",
+            "playbook_dir": "./ansible",
+            "galaxy_file": "./ansible/requirements.yml",
+            "playbook_file": "./ansible/main.yml",
+            "extra_arguments": [
+                "--extra-vars",
+                "aws_access_key={{ user `aws_access_key` }}",
+                "--extra-vars",
+                "aws_secret_key={{ user `aws_secret_key` }}"
+            ]
+        }
+    ]
+}
